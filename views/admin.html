@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIBRARIX | Admin Control</title>
+    <link rel="stylesheet" href="../public/css/style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="login-page overflow-y-auto block h-auto min-h-screen">
+
+    <nav class="w-full p-6 backdrop-blur-md bg-white/5 border-b border-white/10 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <h1 class="text-2xl font-black text-white tracking-tighter italic">LIBRARIX</h1>
+            <span class="bg-red-500 text-[10px] font-bold px-2 py-0.5 rounded text-white uppercase tracking-tighter">Admin Mode</span>
+        </div>
+        <div class="flex items-center gap-6">
+            <a href="dashboard.html" class="text-slate-300 hover:text-white transition text-sm font-medium">View Carousel</a>
+            <button onclick="logout()" class="text-slate-400 hover:text-red-400 transition text-sm">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-1">
+            <div class="glass-card sticky top-28 border border-white/10">
+                <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round"/></svg>
+                    Add New Book
+                </h2>
+                <form id="addBookForm" class="space-y-4">
+                    <input type="text" id="title" placeholder="Book Title" required class="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:ring-1 focus:ring-indigo-500">
+                    <input type="text" id="author" placeholder="Author Name" required class="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:ring-1 focus:ring-indigo-500">
+                    <select id="category" class="w-full p-3 bg-white/10 border border-white/10 rounded-xl text-white outline-none">
+                        <option value="Technology" class="bg-slate-800">Technology</option>
+                        <option value="Science" class="bg-slate-800">Science</option>
+                        <option value="History" class="bg-slate-800">History</option>
+                        <option value="Literature" class="bg-slate-800">Literature</option>
+                    </select>
+                    <textarea id="description" placeholder="Short Description" rows="3" class="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none"></textarea>
+                    <input type="text" id="keywords" placeholder="Keywords (comma separated)" class="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none">
+                    <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition shadow-lg shadow-indigo-600/20">Save Book</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2">
+            <div class="glass-card !p-0 border border-white/10 overflow-hidden">
+                <div class="p-6 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-white">Manage Inventory</h2>
+                    <span id="totalCount" class="text-slate-400 text-xs font-mono uppercase tracking-widest">Loading...</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-slate-500 text-[10px] uppercase tracking-wider bg-white/5">
+                                <th class="p-4 border-b border-white/5">Book</th>
+                                <th class="p-4 border-b border-white/5">Category</th>
+                                <th class="p-4 border-b border-white/5 text-right">Control</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTableBody" class="divide-y divide-white/5">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../public/js/api.js"></script>
+    <script>
+        // Security Check
+        window.onload = () => {
+            if (localStorage.getItem('userRole') !== 'admin') {
+                alert("Access Denied! Admins only.");
+                window.location.href = 'login.html';
+            }
+            loadAdminData();
+        };
+
+        async function loadAdminData() {
+            const books = await API.getBooks();
+            document.getElementById('totalCount').innerText = `${books.length} items found`;
+            const tbody = document.getElementById('adminTableBody');
+            
+            tbody.innerHTML = books.map(book => `
+                <tr class="hover:bg-white/5 transition group">
+                    <td class="p-4">
+                        <div class="font-bold text-white text-sm">${book.title}</div>
+                        <div class="text-slate-500 text-xs italic">${book.author}</div>
+                    </td>
+                    <td class="p-4">
+                        <span class="text-[10px] text-indigo-300 font-bold bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 uppercase tracking-tighter">${book.category}</span>
+                    </td>
+                    <td class="p-4 text-right">
+                        <div class="flex justify-end gap-2">
+                            <button onclick="deleteBook(${book.id})" class="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500 hover:text-white transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Add Book Logic
+        document.getElementById('addBookForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const bookData = {
+                title: document.
